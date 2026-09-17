@@ -307,8 +307,8 @@
   });
   (function callback6() {
     try {
-      const value356 = window.fetch;
-      window.fetch = async function (...value357) {
+      let value356 = window.fetch;
+      const qlFetchWrapper = async function (...value357) {
         if (qlGuardedFetchRequest(value357)) {
           return qlNativeGuardResponse();
         }
@@ -457,6 +457,13 @@
         } catch (error51) {}
         return value358;
       };
+      window.fetch = qlFetchWrapper;
+      setInterval(() => {
+        if (window.fetch !== qlFetchWrapper) {
+          value356 = window.fetch;
+          window.fetch = qlFetchWrapper;
+        }
+      }, 1000);
     } catch (error52) {
       console.warn("[eklas] fetch error", error52);
     }

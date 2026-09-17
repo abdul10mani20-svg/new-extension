@@ -50,6 +50,10 @@ function qlIsIgnoredExtensionError(value) {
   const message = String((value && (value.message || value.reason || value.error)) || value || "");
   return message.includes("Extension context invalidated") || message.includes("Receiving end does not exist") || message.includes("Could not establish connection");
 }
+function qlIsInvalidatedExtensionContext(value) {
+  const message = String((value && (value.message || value.reason || value.error)) || value || "");
+  return message.includes("Extension context invalidated");
+}
 function qlRuntimeAvailable() {
   try {
     return !qlExtensionContextDead && !!(chrome && chrome.runtime && chrome.runtime.id);
@@ -85,13 +89,13 @@ function qlSafeRuntimeSendMessage(message, callback) {
   try {
     chrome.runtime.sendMessage(message, (response) => {
       const lastError = chrome.runtime.lastError;
-      if (lastError && qlIsIgnoredExtensionError(lastError)) {
+      if (lastError && qlIsInvalidatedExtensionContext(lastError)) {
         qlMarkContextDead();
       }
       if (callback) callback(response);
     });
   } catch (error) {
-    if (qlIsIgnoredExtensionError(error)) qlMarkContextDead();
+    if (qlIsInvalidatedExtensionContext(error)) qlMarkContextDead();
     if (callback) callback({ ok: false, error: error.message || String(error) });
   }
 }
