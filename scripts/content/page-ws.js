@@ -473,23 +473,10 @@
       };
       function qlInstallFetchHook() {
         const currentFetch = window.fetch;
-        if (currentFetch !== qlFetchWrapper && typeof currentFetch === "function") {
+        if (typeof currentFetch === "function" && currentFetch !== qlFetchWrapper) {
           value356 = currentFetch;
         }
-        try {
-          Object.defineProperty(window, "fetch", {
-            configurable: true,
-            enumerable: true,
-            get: () => qlFetchWrapper,
-            set: (nextFetch) => {
-              if (typeof nextFetch === "function" && nextFetch !== qlFetchWrapper) {
-                value356 = nextFetch;
-              }
-            },
-          });
-        } catch (error58) {
-          window.fetch = qlFetchWrapper;
-        }
+        window.fetch = qlFetchWrapper;
       }
       qlInstallFetchHook();
       setInterval(() => {
