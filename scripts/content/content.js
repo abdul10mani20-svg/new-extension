@@ -78,7 +78,7 @@ function qlSafeStorageSet(value) {
   try {
     chrome.storage.local.set(value);
   } catch (error) {
-    if (qlIsIgnoredExtensionError(error)) qlMarkContextDead();
+    if (qlIsInvalidatedExtensionContext(error)) qlMarkContextDead();
   }
 }
 function qlSafeRuntimeSendMessage(message, callback) {
@@ -100,14 +100,14 @@ function qlSafeRuntimeSendMessage(message, callback) {
   }
 }
 window.addEventListener("error", (event) => {
-  if (qlIsIgnoredExtensionError(event.error || event.message)) {
+  if (qlIsInvalidatedExtensionContext(event.error || event.message)) {
     qlMarkContextDead();
     event.preventDefault();
     event.stopImmediatePropagation();
   }
 }, true);
 window.addEventListener("unhandledrejection", (event) => {
-  if (qlIsIgnoredExtensionError(event.reason)) {
+  if (qlIsInvalidatedExtensionContext(event.reason)) {
     qlMarkContextDead();
     event.preventDefault();
     event.stopImmediatePropagation();
@@ -167,7 +167,7 @@ function createUI() {
         ql_sidebar_mode: true,
       });
     } catch (error) {
-      if (qlIsIgnoredExtensionError(error)) qlMarkContextDead();
+      if (qlIsInvalidatedExtensionContext(error)) qlMarkContextDead();
     }
   }
   removeShieldOverlay();
@@ -322,7 +322,7 @@ function qlRefreshNativeLicenseGuard() {
       },
     );
   } catch (error) {
-    if (qlIsIgnoredExtensionError(error)) qlMarkContextDead();
+    if (qlIsInvalidatedExtensionContext(error)) qlMarkContextDead();
   }
 }
 function qlStartNativeLicenseGuard() {
@@ -554,13 +554,13 @@ chrome.storage.onChanged.addListener((param68, param69) => {
       try {
         if (qlRuntimeAvailable()) chrome.storage.local.set({ ql_sidebar_mode: true });
       } catch (error) {
-        if (qlIsIgnoredExtensionError(error)) qlMarkContextDead();
+        if (qlIsInvalidatedExtensionContext(error)) qlMarkContextDead();
       }
     }
   }
 });
 } catch (error) {
-  if (qlIsIgnoredExtensionError(error)) qlMarkContextDead();
+  if (qlIsInvalidatedExtensionContext(error)) qlMarkContextDead();
 }
 function updateSyncStatus() {
   if (!qlRuntimeAvailable()) return;
@@ -594,7 +594,7 @@ function updateSyncStatus() {
     },
   );
   } catch (error) {
-    if (qlIsIgnoredExtensionError(error)) qlMarkContextDead();
+    if (qlIsInvalidatedExtensionContext(error)) qlMarkContextDead();
   }
 }
 let _qlStorageWatchSetup = false;
@@ -610,7 +610,7 @@ function requestLatestTokenFromHook(value127 = 1200) {
       try {
         if (qlRuntimeAvailable()) chrome.storage.onChanged.removeListener(function3);
       } catch (error) {
-        if (qlIsIgnoredExtensionError(error)) qlMarkContextDead();
+        if (qlIsInvalidatedExtensionContext(error)) qlMarkContextDead();
       }
       param72(param73);
     }
@@ -629,7 +629,7 @@ function requestLatestTokenFromHook(value127 = 1200) {
     try {
       if (qlRuntimeAvailable()) chrome.storage.onChanged.addListener(function3);
     } catch (error) {
-      if (qlIsIgnoredExtensionError(error)) qlMarkContextDead();
+      if (qlIsInvalidatedExtensionContext(error)) qlMarkContextDead();
       function2(false);
       return;
     }
@@ -692,11 +692,13 @@ async function sendPromptThroughBackend(message, options) {
   const session = {
     token: opts.token || "",
     projectId: opts.projectId || "",
+    workspaceId: opts.workspaceId || "",
   };
   if (!session.token || !session.projectId) {
     const storedSession = await getStoredLovableTokenAndProject();
     session.token = session.token || storedSession.token || "";
     session.projectId = session.projectId || storedSession.projectId || "";
+    session.workspaceId = session.workspaceId || storedSession.workspaceId || "";
   }
   if (!session.projectId) {
     const fromUrl = String(window.location.pathname || "").match(/\/projects\/([a-f0-9-]{36})/i);
@@ -712,6 +714,7 @@ async function sendPromptThroughBackend(message, options) {
         message: message,
         token: session.token || "",
         projectId: session.projectId || "",
+        workspaceId: session.workspaceId || "",
         clientGitSha: opts.clientGitSha || "",
         files: Array.isArray(opts.files) ? opts.files : [],
         optimisticImageUrls: Array.isArray(opts.optimisticImageUrls)
@@ -1105,14 +1108,14 @@ window.addEventListener("message", (param153) => {
       .replace(/^Bearer\s+/i, "")
       .trim();
   }
-  if (param153.data.projectId && typeof param153.data.projectId === "string") {
-    config6.lovable_projectId = param153.data.projectId;
+  if (Object.prototype.hasOwnProperty.call(param153.data, "projectId")) {
+    config6.lovable_projectId = typeof param153.data.projectId === "string" ? param153.data.projectId : "";
   }
   if (param153.data.email && typeof param153.data.email === "string") {
     config6.lovable_email = param153.data.email.trim().toLowerCase();
   }
-  if (param153.data.workspaceId && typeof param153.data.workspaceId === "string") {
-    config6.lovable_workspaceId = param153.data.workspaceId;
+  if (Object.prototype.hasOwnProperty.call(param153.data, "workspaceId")) {
+    config6.lovable_workspaceId = typeof param153.data.workspaceId === "string" ? param153.data.workspaceId : "";
   }
   if (param153.data.clientGitSha && typeof param153.data.clientGitSha === "string") {
     config6.lovable_clientGitSha = param153.data.clientGitSha;
@@ -1129,7 +1132,7 @@ window.addEventListener("message", (param153) => {
       setTimeout(updateSyncStatus, 800);
       });
     } catch (error) {
-      if (qlIsIgnoredExtensionError(error)) qlMarkContextDead();
+      if (qlIsInvalidatedExtensionContext(error)) qlMarkContextDead();
     }
   }
   if (hasExtensionRuntime()) {
@@ -1157,6 +1160,7 @@ window.addEventListener("message", (event) => {
   sendPromptThroughBackend(payload.message || "", {
     token: payload.token || "",
     projectId: payload.projectId || "",
+    workspaceId: payload.workspaceId || "",
     files: Array.isArray(payload.files) ? payload.files : [],
     optimisticImageUrls: Array.isArray(payload.optimisticImageUrls)
       ? payload.optimisticImageUrls
@@ -1257,16 +1261,17 @@ async function getStoredLovableTokenAndProject() {
   var value247 = await new Promise(function (resolve) {
     try {
       chrome.storage.local.get(
-        ["lovable_token", "lovable_projectId"],
+        ["lovable_token", "lovable_projectId", "lovable_workspaceId"],
         resolve
       );
     } catch (error) {
-      if (qlIsIgnoredExtensionError(error)) qlMarkContextDead();
+      if (qlIsInvalidatedExtensionContext(error)) qlMarkContextDead();
       resolve({});
     }
   });
   var token = value247.lovable_token || "";
   var projectId = value247.lovable_projectId || "";
+  var workspaceId = value247.lovable_workspaceId || "";
   if (token.indexOf("Bearer ") === 0) {
     token = token.slice(7);
   }
@@ -1281,7 +1286,7 @@ async function getStoredLovableTokenAndProject() {
       token = value251.tokens[0].token;
     }
   }
-  return { token, projectId };
+  return { token, projectId, workspaceId };
 }
 
 async function publishProject(input) {

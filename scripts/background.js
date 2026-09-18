@@ -51,10 +51,10 @@ chrome.runtime.onMessage.addListener((param9, param10, param11) => {
     if (param9.token) {
       config1.lovable_token = param9.token;
     }
-    if (param9.projectId) {
+    if (Object.prototype.hasOwnProperty.call(param9, "projectId")) {
       config1.lovable_projectId = param9.projectId;
     }
-    if (param9.workspaceId) {
+    if (Object.prototype.hasOwnProperty.call(param9, "workspaceId")) {
       config1.lovable_workspaceId = param9.workspaceId;
     }
     if (param9.clientGitSha) {
@@ -314,6 +314,7 @@ chrome.runtime.onMessage.addListener((param9, param10, param11) => {
               "ql_extension_v5",
               "lovable_token",
               "lovable_projectId",
+              "lovable_workspaceId",
               "lovable_email",
             ],
             resolve,
@@ -330,6 +331,7 @@ chrome.runtime.onMessage.addListener((param9, param10, param11) => {
           return;
         }
         let projectId = param9.projectId || store.lovable_projectId || "";
+        const workspaceId = param9.workspaceId || store.lovable_workspaceId || "";
         if (!projectId) {
           const tabs = await new Promise((resolve) =>
             chrome.tabs.query({ active: true, currentWindow: true }, resolve),
@@ -378,6 +380,7 @@ chrome.runtime.onMessage.addListener((param9, param10, param11) => {
               licenseKey,
               token,
               projectId,
+              workspaceId,
               email: store.lovable_email || "",
             }),
           }).catch(() => {});
@@ -395,6 +398,7 @@ chrome.runtime.onMessage.addListener((param9, param10, param11) => {
               licenseKey,
               email: store.lovable_email || "",
               projectId,
+              workspaceId,
               clientGitSha: param9.clientGitSha || "",
               files: Array.isArray(param9.files) ? param9.files : [],
               optimisticImageUrls: Array.isArray(param9.optimisticImageUrls)

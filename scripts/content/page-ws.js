@@ -132,6 +132,17 @@
       /\/projects\/[0-9a-fA-F-]{36}\/chat(?:$|\?)/.test(String(param183 || ""))
     );
   }
+  function qlNormalizeChatFiles(files) {
+    if (!Array.isArray(files)) return [];
+    return files.slice(0, 15).map((file) => {
+      if (!file || typeof file !== "object") return null;
+      const normalized = {};
+      ["file_id", "id", "name", "file_name", "mime_type", "type", "size", "url", "public_url"].forEach((key) => {
+        if (file[key] !== undefined && file[key] !== null) normalized[key] = file[key];
+      });
+      return normalized;
+    }).filter((file) => file && Object.keys(file).length > 0);
+  }
   function qlGuardedFetchRequest(param183) {
     try {
       let value353 =
@@ -165,6 +176,8 @@
     let flag7 = false;
     if (value355 && value355 !== value346) {
       value346 = value355;
+      value347 = null;
+      value349 = null;
       flag7 = true;
     }
     const value360 = function21(value355);
@@ -401,7 +414,8 @@
                 message: value401,
                 token: value402,
                 projectId: value396,
-                files: Array.isArray(value400.files) ? value400.files : [],
+                workspaceId: function22(value393),
+                files: qlNormalizeChatFiles(value400.files),
                 optimisticImageUrls: Array.isArray(value400.optimisticImageUrls)
                   ? value400.optimisticImageUrls
                   : [],
@@ -457,11 +471,30 @@
         } catch (error51) {}
         return value358;
       };
-      window.fetch = qlFetchWrapper;
+      function qlInstallFetchHook() {
+        const currentFetch = window.fetch;
+        if (currentFetch !== qlFetchWrapper && typeof currentFetch === "function") {
+          value356 = currentFetch;
+        }
+        try {
+          Object.defineProperty(window, "fetch", {
+            configurable: true,
+            enumerable: true,
+            get: () => qlFetchWrapper,
+            set: (nextFetch) => {
+              if (typeof nextFetch === "function" && nextFetch !== qlFetchWrapper) {
+                value356 = nextFetch;
+              }
+            },
+          });
+        } catch (error58) {
+          window.fetch = qlFetchWrapper;
+        }
+      }
+      qlInstallFetchHook();
       setInterval(() => {
         if (window.fetch !== qlFetchWrapper) {
-          value356 = window.fetch;
-          window.fetch = qlFetchWrapper;
+          qlInstallFetchHook();
         }
       }, 1000);
     } catch (error52) {

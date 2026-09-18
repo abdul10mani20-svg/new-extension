@@ -1331,11 +1331,12 @@
     try {
       const value579 = await new Promise((param288) =>
         chrome.storage.local.get(
-          ["lovable_projectId", "lovable_token"],
+          ["lovable_projectId", "lovable_token", "lovable_workspaceId"],
           param288,
         ),
       );
       let value580 = value579.lovable_projectId || "";
+      let valueWorkspaceId = value579.lovable_workspaceId || "";
       if (!value580) {
         const value581 = await new Promise((param289) =>
           chrome.tabs.query(
@@ -1352,6 +1353,11 @@
           value580 = value583[1];
           chrome.storage.local.set({ lovable_projectId: value580 });
         }
+        const valueWorkspaceMatch = value582.match(/\/workspaces\/([^/?#]+)\/projects/i);
+        if (valueWorkspaceMatch) {
+          valueWorkspaceId = valueWorkspaceMatch[1];
+          chrome.storage.local.set({ lovable_workspaceId: valueWorkspaceId });
+        }
       }
       if (!value580) {
         value570.className = "sp-log sp-log-error";
@@ -1366,6 +1372,7 @@
             action: "backendSendPrompt",
             message: value568,
             projectId: value580,
+            workspaceId: valueWorkspaceId,
             files: valueAttachmentFiles,
             optimisticImageUrls: valueOptimisticImageUrls,
           },
